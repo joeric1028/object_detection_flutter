@@ -2,6 +2,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_ml_vision/google_ml_vision.dart';
+import 'dart:math' as math;
 
 import 'detector_painters.dart';
 import 'scanner_utils.dart';
@@ -40,8 +41,8 @@ class _CameraPreviewScannerState extends State<CameraPreviewScanner> {
     _camera = CameraController(
       description,
       defaultTargetPlatform == TargetPlatform.android
-          ? ResolutionPreset.high
-          : ResolutionPreset.high,
+          ? ResolutionPreset.ultraHigh
+          : ResolutionPreset.ultraHigh,
       enableAudio: false,
     );
     await _camera?.initialize();
@@ -70,7 +71,8 @@ class _CameraPreviewScannerState extends State<CameraPreviewScanner> {
     });
   }
 
-  Future<Object> Function(GoogleVisionImage visionImage)? _getDetectionMethod() {
+  Future<Object> Function(GoogleVisionImage visionImage)?
+      _getDetectionMethod() {
     switch (_currentDetector) {
       case Detector.text:
         return _recognizer.processImage;
@@ -81,7 +83,7 @@ class _CameraPreviewScannerState extends State<CameraPreviewScanner> {
       case Detector.face:
         return _faceDetector.processImage;
       case Detector.cloudLabel:
-      // TODO: Handle this case.
+        return _faceDetector.processImage;
       case null:
         return null;
     }
@@ -120,7 +122,6 @@ class _CameraPreviewScannerState extends State<CameraPreviewScanner> {
         painter = LabelDetectorPainter(imageSize, _scanResults);
         break;
       default:
-        assert(_currentDetector == Detector.text);
         if (_scanResults is! VisionText) return noResultsText;
         painter = TextDetectorPainter(imageSize, _scanResults);
     }
@@ -146,7 +147,12 @@ class _CameraPreviewScannerState extends State<CameraPreviewScanner> {
           : Stack(
               fit: StackFit.expand,
               children: <Widget>[
-                CameraPreview(_camera!),
+                _direction == CameraLensDirection.front
+                    ? Transform(
+                        alignment: Alignment.center,
+                        transform: Matrix4.rotationY(math.pi),
+                        child: CameraPreview(_camera!))
+                    : CameraPreview(_camera!),
                 _buildResults(),
               ],
             ),
@@ -177,6 +183,7 @@ class _CameraPreviewScannerState extends State<CameraPreviewScanner> {
         title: const Text('ML Vision Example'),
         actions: <Widget>[
           PopupMenuButton<Detector>(
+            initialValue: _currentDetector,
             onSelected: (Detector result) {
               _currentDetector = result;
             },
@@ -184,6 +191,10 @@ class _CameraPreviewScannerState extends State<CameraPreviewScanner> {
               const PopupMenuItem<Detector>(
                 value: Detector.barcode,
                 child: Text('Detect Barcode'),
+              ),
+              const PopupMenuItem<Detector>(
+                value: Detector.cloudLabel,
+                child: Text('Detect Cloud Label'),
               ),
               const PopupMenuItem<Detector>(
                 value: Detector.face,

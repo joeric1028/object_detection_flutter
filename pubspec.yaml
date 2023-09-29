@@ -30,8 +30,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  google_ml_vision: ^0.0.7
-  camera: 0.9.5
+  google_ml_vision: ^0.0.8
+  camera: ^0.10.5+4
 
 
   # The following adds the Cupertino Icons font to your application.
